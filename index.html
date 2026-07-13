@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Methodist University - Chemistry Tools</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    /* Basic reset */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background-color: #f5f7fb;
+      color: #222;
+      line-height: 1.5;
+      padding: 20px;
+    }
+
+    /* Header area */
+    .site-header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .site-header h1 {
+      font-size: 2.2rem;
+      color: #003366;
+      margin-bottom: 8px;
+    }
+
+    .site-header h2 {
+      font-size: 1.4rem;
+      color: #0055a5;
+      margin-bottom: 4px;
+    }
+
+    .site-header h3 {
+      font-size: 1.2rem;
+      color: #333;
+      margin-bottom: 16px;
+    }
+
+    /* Container for tools */
+    .tools-container {
+      max-width: 1100px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      padding: 20px;
+    }
+
+    .tools-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 15px;
+    }
+
+    .tools-header-title {
+      font-size: 1.3rem;
+      font-weight: bold;
+      color: #003366;
+      margin-bottom: 10px;
+    }
+
+    /* Dropdown styling */
+    .tools-dropdown-label {
+      font-weight: bold;
+      margin-right: 8px;
+      color: #333;
+    }
+
+    .tools-dropdown {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    select {
+      padding: 6px 10px;
+      font-size: 0.95rem;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      min-width: 230px;
+    }
+
+    /* Content panel */
+    .tools-panel {
+      margin-top: 15px;
+      border-top: 1px solid #dde3ef;
+      padding-top: 15px;
+    }
+
+    .panel-title {
+      font-size: 1.05rem;
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: #0055a5;
+    }
+
+    /* Iframe used as content panel */
+    #toolFrame {
+      width: 100%;
+      height: 600px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      background-color: #fafafa;
+    }
+
+    /* Simple helper text when no tool selected */
+    #panelMessage {
+      margin-top: 8px;
+      font-size: 0.9rem;
+      color: #555;
+    }
+
+    /* Responsive tweaks */
+    @media (max-width: 700px) {
+      .tools-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .tools-header-title {
+        margin-bottom: 12px;
+      }
+
+      select {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Main titles -->
+  <header class="site-header">
+    <h1>Methodist University</h1>
+    <h2>Department of Chemistry and Physical Science</h2>
+    <h3>Chemistry Tools</h3>
+  </header>
+
+  <!-- Tools section -->
+  <section class="tools-container">
+    <div class="tools-header">
+      <div class="tools-header-title">
+        Chemistry Tools
+      </div>
+      <div class="tools-dropdown">
+        <span class="tools-dropdown-label">Select a tool:</span>
+        <select id="toolSelect">
+          <option value="" selected disabled>-- choose a tool --</option>
+          <option value="https://cgphung-glitch.github.io/temperature/">Temperature Conversion</option>
+          <option value="https://cgphung-glitch.github.io/conversion/">Conversion Factor</option>
+          <option value="https://cgphung-glitch.github.io/stoichiometry/">Stoichiometry</option>
+          <option value="https://cgphung-glitch.github.io/periodic-table/">Periodic Table</option>
+          <option value="https://cgphung-glitch.github.io/nomenclature/">General Chemistry Nomenclature</option>
+          <option value="https://cgphung-glitch.github.io/balance-equation/">Balancing Chemical Equation</option>
+          <option value="https://cgphung-glitch.github.io/molecule-sketcher/">Molecule Sketcher</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="tools-panel">
+      <div class="panel-title" id="panelTitle">
+        Tool panel
+      </div>
+
+      <!-- Panel where selected tool loads -->
+      <!-- Uses iframe so external pages like the Periodic Table can be embedded easily [web:12][web:9][web:14] -->
+      <iframe id="toolFrame" src="" title="Chemistry Tool Panel"></iframe>
+
+      <div id="panelMessage">
+        Select a tool from the dropdown above to load it here.
+      </div>
+    </div>
+  </section>
+
+  <script>
+    // Map human-readable names to display in the panel title
+    const toolNames = {
+      "https://cgphung-glitch.github.io/temperature/": "Temperature Conversion",
+      "https://cgphung-glitch.github.io/conversion/": "Conversion Factor",
+      "https://cgphung-glitch.github.io/stoichiometry/": "Stoichiometry",
+      "https://cgphung-glitch.github.io/periodic-table/": "Periodic Table",
+      "https://cgphung-glitch.github.io/nomenclature/": "General Chemistry Nomenclature",
+      "https://cgphung-glitch.github.io/balance-equation/": "Balancing Chemical Equation",
+      "https://cgphung-glitch.github.io/molecule-sketcher/": "Molecule Sketcher"
+    };
+
+    const selectEl = document.getElementById('toolSelect');
+    const frameEl  = document.getElementById('toolFrame');
+    const titleEl  = document.getElementById('panelTitle');
+    const msgEl    = document.getElementById('panelMessage');
+
+    selectEl.addEventListener('change', function () {
+      const url = this.value;
+
+      if (!url) {
+        frameEl.src = '';
+        titleEl.textContent = 'Tool panel';
+        msgEl.textContent = 'Select a tool from the dropdown above to load it here.';
+        return;
+      }
+
+      // Update panel title based on selected tool
+      const name = toolNames[url] || 'Chemistry Tool';
+      titleEl.textContent = name;
+
+      // Load the selected tool into the iframe panel [web:12][web:9]
+      frameEl.src = url;
+
+      // Update helper text
+      msgEl.textContent = 'Loading: ' + name;
+    });
+  </script>
+
+</body>
+</html>
