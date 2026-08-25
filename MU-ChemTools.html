@@ -171,7 +171,8 @@
           <a href="#" onclick="loadURL('conversionFactor')">Conversion Factor</a>
           <a href="#" onclick="loadURL('temperatureConversion')">Temperature Conversion</a>
           <a href="#" onclick="loadURL('significantFigures')">Significant Figures</a>
-        </div>
+          <a href="#" onclick="loadURL('uncertainty')">PercentUncertainty</a>
+        </div> 
       </div>
 
       <!-- Chemistry Dropdown -->
@@ -187,12 +188,23 @@
         </div>
       </div>
 
+      <!-- Chemistry Lab Dropdown -->
+      <div class="dropdown">
+        <button class="dropbtn" onclick="toggleDropdown(event)">Chemistry Lab &#9660;</button>
+        <div class="dropdown-content">
+          <a href="#" onclick="loadURL('titration')">Titration</a>
+          <a href="#" onclick="loadURL('constpcalori')">Constant Pressure Calorimetry</a>
+          <a href="#" onclick="loadURL('constvcalori')">Constant Volume Calorimetry</a>
+        </div>
+      </div>
+
       <!-- Physics Dropdown -->
       <div class="dropdown">
         <button class="dropbtn" onclick="toggleDropdown(event)">Physics &#9660;</button>
         <div class="dropdown-content">
           <a href="#" onclick="loadURL('kinematics')">Kinematic Equations</a>
           <a href="#" onclick="loadURL('vectors')">Vectors</a>
+          <a href="#" onclick="loadURL('freebodydiagrams')">Free-Body Diagrams</a>
         </div>
       </div>
 
@@ -202,7 +214,9 @@
         <div class="dropdown-content">
           <a href="#" onclick="loadURL('dataGrapher')">Data Grapher</a>
           <a href="#" onclick="loadURL('plotFunctions')">Plot Functions</a>
+          <a href="#" onclick="loadURL('plotPolar')">Plot Polar Functions</a>
           <a href="#" onclick="loadURL('plot3dFunctions')">Plot 3D Functions</a>
+          <a href="#" onclick="loadURL('ternarygraph')">Ternary Grapher</a>
         </div>
       </div>
     </nav>
@@ -221,9 +235,10 @@
     // Update the URLs below with your corresponding GitHub Pages / hosted app links.
     const urlMap = {
       // Basic
-      conversionFactor: "https://cgphung-glitch.github.io/conversion/",
-      temperatureConversion: "https://cgphung-glitch.github.io/temperature/",
-      significantFigures: "https://cgphung-glitch.github.io/genchem-practice/significant-figures.html",
+      conversionFactor: "https://cgphung-glitch.github.io/basic/conversion.html",
+      temperatureConversion: "https://cgphung-glitch.github.io/basic/temp-conv.html",
+      significantFigures: "https://cgphung-glitch.github.io/basic/sigfig-trainer.html",
+      uncertainty: "https://cgphung-glitch.github.io/basic/uncertainty.html",
 
       // Chemistry
       ptProperties: "https://cgphung-glitch.github.io/chemlab-animation/periodic-table-app.html",
@@ -232,15 +247,24 @@
       stoichiometry: "https://cgphung-glitch.github.io/stoichiometry/",
       balancingEq: "https://cgphung-glitch.github.io/balance-equation/",
       redoxBalancer: "https://cgphung-glitch.github.io/genchem-practice/redox-balance.html",
+      titration: "https://cgphung-glitch.github.io/titration/",
+
+      // Chemistry Lab
+      constpcalori: "https://cgphung-glitch.github.io/constant-pressure-calorimetry/",
+      constvcalori: "https://cgphung-glitch.github.io/constant-volume-calorimetry/",
+
 
       // Physics
-      kinematics: "https://example.com/kinematic-equations",
-      vectors: "https://example.com/vectors",
+      kinematics: "https://cgphung-glitch.github.io/physics/kinematic-trainer.html",
+      vectors: "https://cgphung-glitch.github.io/physics/vector-practice.html",
+      freebodydiagrams: "https://cgphung-glitch.github.io/physics/free-body-diagram.html",
 
       // Graphing
-      dataGrapher: "https://cgphung-glitch.github.io/chemlab-animation/data_grapher.html",
-      plotFunctions: "https://cgphung-glitch.github.io/chemlab-animation/plot-three-functions.html",
-      plot3dFunctions: "https://cgphung-glitch.github.io/3d-surface/"
+      dataGrapher: "https://cgphung-glitch.github.io/graphing/data_grapher.html",
+      plotFunctions: "https://cgphung-glitch.github.io/graphing/plot-three-functions.html",
+      plot3dFunctions: "https://cgphung-glitch.github.io/graphing/3d-grapher.html",
+      ternarygraph: "https://cgphung-glitch.github.io/graphing/ternary-graph.html",
+      plotPolar: "https://cgphung-glitch.github.io/graphing/polar-plot.html" 
     };
 
     // Toggle Dropdown menu visibility
