@@ -17,49 +17,35 @@
       font-family: Arial, Helvetica, sans-serif;
       display: flex;
       flex-direction: column;
+      overflow: hidden;
     }
 
     /* Top Panel Styling */
     header {
       background-color: #005A36; /* MU Green */
       color: #FFC72C; /* Gold */
-      padding: 15px 15px;
+      padding: 15px 10px;
       text-align: center;
       box-shadow: 0 2px 5px rgba(0,0,0,0.2);
       z-index: 10;
       flex-shrink: 0;
-      position: relative;
     }
 
     header h1 {
-      font-size: 1.4rem;
+      font-size: 1.5rem;
       font-weight: bold;
       margin-bottom: 4px;
       letter-spacing: 0.5px;
     }
 
     header h2 {
-      font-size: 0.9rem;
+      font-size: 0.95rem;
       font-weight: normal;
       margin-bottom: 12px;
       opacity: 0.9;
     }
 
-    /* Hamburger Toggle Button for Mobile */
-    .mobile-menu-toggle {
-      display: none;
-      background-color: #FFC72C;
-      color: #005A36;
-      border: none;
-      font-size: 1.1rem;
-      font-weight: bold;
-      padding: 8px 16px;
-      border-radius: 4px;
-      cursor: pointer;
-      margin: 0 auto;
-    }
-
-    /* Navigation Container */
+    /* Navigation / Menu Bar */
     .nav-container {
       display: flex;
       justify-content: center;
@@ -70,7 +56,6 @@
 
     .dropdown {
       position: relative;
-      width: auto;
     }
 
     .dropbtn {
@@ -83,7 +68,6 @@
       border-radius: 4px;
       cursor: pointer;
       transition: background-color 0.2s, color 0.2s;
-      width: 100%;
     }
 
     .dropbtn:hover, .dropbtn:focus {
@@ -98,26 +82,25 @@
       left: 50%;
       transform: translateX(-50%);
       background-color: #ffffff;
-      min-width: 240px;
-      max-height: 300px;
-      overflow-y: auto;
+      min-width: 220px;
       box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
       border-radius: 4px;
+      overflow: hidden;
       z-index: 20;
     }
 
     .dropdown-content a {
       color: #333333;
-      padding: 12px 16px; /* Larger touch target for mobile */
+      padding: 10px 14px;
       text-decoration: none;
       display: block;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       text-align: left;
       border-bottom: 1px solid #f0f0f0;
       transition: background-color 0.15s;
     }
 
-    .dropdown-content a:hover, .dropdown-content a:active {
+    .dropdown-content a:hover {
       background-color: #f1f1f1;
       color: #005A36;
       font-weight: bold;
@@ -132,22 +115,19 @@
       display: block;
     }
 
-    /* Main Content Container */
+    /* Lower Panel / Canvas Styling */
     main {
       flex: 1;
       width: 100%;
+      height: 100%;
       background-color: #f8f9fa;
       position: relative;
-      display: flex;
-      flex-direction: column;
     }
 
     iframe {
       width: 100%;
       height: 100%;
-      min-height: 80vh;
       border: none;
-      -webkit-overflow-scrolling: touch;
     }
 
     .placeholder-text {
@@ -161,55 +141,17 @@
       padding: 20px;
     }
 
-    /* Mobile Responsive Styles */
-    @media (max-width: 768px) {
-      header {
-        padding: 12px 10px;
-      }
-
+    /* Responsive Adjustments for Small Screens */
+    @media (max-width: 480px) {
       header h1 {
-        font-size: 1.15rem;
+        font-size: 1.25rem;
       }
-
       header h2 {
         font-size: 0.8rem;
-        margin-bottom: 8px;
       }
-
-      .mobile-menu-toggle {
-        display: inline-block;
-      }
-
-      .nav-container {
-        display: none; /* Hide menu by default on mobile */
-        flex-direction: column;
-        width: 100%;
-        margin-top: 10px;
-        gap: 6px;
-      }
-
-      .nav-container.mobile-open {
-        display: flex;
-      }
-
-      .dropdown {
-        width: 100%;
-      }
-
       .dropbtn {
-        padding: 10px 14px;
-        font-size: 0.9rem;
-        text-align: center;
-      }
-
-      .dropdown-content {
-        position: static;
-        transform: none;
-        width: 100%;
-        max-height: none;
-        box-shadow: none;
-        margin-top: 4px;
-        border: 1px solid #ddd;
+        padding: 6px 10px;
+        font-size: 0.8rem;
       }
     }
   </style>
@@ -220,11 +162,8 @@
   <header>
     <h1>Methodist University</h1>
     <h2>Department of Chemistry and Physical Science</h2>
-
-    <!-- Mobile Hamburger Toggle -->
-    <button class="mobile-menu-toggle" onclick="toggleMobileMenu(event)">☰ Select Topic</button>
     
-    <nav class="nav-container" id="mainNav">
+    <nav class="nav-container">
       <!-- Basic Dropdown -->
       <div class="dropdown">
         <button class="dropbtn" onclick="toggleDropdown(event)">Basic &#9660;</button>
@@ -233,7 +172,6 @@
           <a href="#" onclick="loadURL('temperatureConversion')">Temperature Conversion</a>
           <a href="#" onclick="loadURL('significantFigures')">Significant Figures</a>
           <a href="#" onclick="loadURL('uncertainty')">Percent Uncertainty</a>
-          <a href="#" onclick="loadURL('stdDev')">Standard Deviation</a>
         </div> 
       </div>
 
@@ -311,13 +249,15 @@
   </main>
 
   <script>
+    // GitHub or External URLs Mapping Object
+    // Update the URLs below with your corresponding GitHub Pages / hosted app links.
     const urlMap = {
       // Basic
       conversionFactor: "https://cgphung-glitch.github.io/basic/conversion.html",
       temperatureConversion: "https://cgphung-glitch.github.io/basic/temp-conv.html",
       significantFigures: "https://cgphung-glitch.github.io/basic/sigfig-trainer.html",
       uncertainty: "https://cgphung-glitch.github.io/basic/Uncertainty.html",
-      stdDev: "https://cgphung-glitch.github.io/basic/std-dev-trainer.html",
+
       // Chemistry
       ptProperties: "https://cgphung-glitch.github.io/chemlab-animation/periodic-table-app.html",
       ptGame: "https://cgphung-glitch.github.io/chemlab-animation/ptable-game.html",
@@ -332,6 +272,7 @@
       qchemistry: "https://cgphung-glitch.github.io/chemistry/qchem-practice.html",
       electronConfiguration: "https://cgphung-glitch.github.io/chemistry/electron-configuration.html",
       lewisStructures: "https://cgphung-glitch.github.io/chemistry/lewis-structure-trainer.html",
+      
 
       // Chemistry Lab
       constpcalori: "https://cgphung-glitch.github.io/chemlab-animation/const-press-calorimetry.html",
@@ -344,6 +285,7 @@
       HRadialFunc: "https://cgphung-glitch.github.io/chemlab-animation/hydrogen-radial-functions.html",
       PlanckDistribution: "https://cgphung-glitch.github.io/chemlab-animation/Plancks-distribution.html",
       moleculeSketcher: "https://cgphung-glitch.github.io/chemlab-animation/molecule-sketcher.html",
+
 
       // Physics
       kinematics: "https://cgphung-glitch.github.io/physics/kinematics-trainer.html",
@@ -362,18 +304,12 @@
       plotPolar: "https://cgphung-glitch.github.io/graphing/polar-plot.html" 
     };
 
-    // Toggle Mobile Navigation Panel
-    function toggleMobileMenu(event) {
-      event.stopPropagation();
-      const nav = document.getElementById('mainNav');
-      nav.classList.toggle('mobile-open');
-    }
-
     // Toggle Dropdown menu visibility
     function toggleDropdown(event) {
       event.stopPropagation();
       const currentDropdown = event.target.closest('.dropdown');
       
+      // Close all other dropdowns first
       document.querySelectorAll('.dropdown').forEach(drop => {
         if (drop !== currentDropdown) {
           drop.classList.remove('active');
@@ -389,25 +325,25 @@
       const iframe = document.getElementById('displayCanvas');
       const placeholder = document.getElementById('placeholder');
 
-      if (url) {
+      if (url && url !== "https://example.com/...") {
         iframe.src = url;
         iframe.style.display = 'block';
         placeholder.style.display = 'none';
+      } else {
+        alert("Please set a valid GitHub or target URL in the JavaScript 'urlMap' object for this item.");
       }
 
-      // Close open dropdown menus and close mobile panel after selection
+      // Close open dropdown menus after selection
       document.querySelectorAll('.dropdown').forEach(drop => {
         drop.classList.remove('active');
       });
-      document.getElementById('mainNav').classList.remove('mobile-open');
     }
 
-    // Close menus on click outside
+    // Close dropdowns if user clicks outside of navigation
     window.onclick = function() {
       document.querySelectorAll('.dropdown').forEach(drop => {
         drop.classList.remove('active');
       });
-      document.getElementById('mainNav').classList.remove('mobile-open');
     };
   </script>
 </body>
