@@ -36,6 +36,42 @@
       z-index: 10;
       flex-shrink: 0;
       position: relative;
+      transition: max-height 0.3s ease-in-out, padding 0.3s ease-in-out;
+      overflow: visible;
+    }
+
+    header.collapsed {
+      padding-top: 5px;
+      padding-bottom: 5px;
+    }
+
+    header.collapsed .header-content {
+      display: none;
+    }
+
+    /* Header Toggle Bar & Button */
+    .header-toggle-bar {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      width: 100%;
+    }
+
+    .header-toggle-btn {
+      background-color: transparent;
+      color: #FFC72C;
+      border: 1px solid #FFC72C;
+      font-size: 0.8rem;
+      font-weight: bold;
+      padding: 4px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.2s, color 0.2s;
+    }
+
+    .header-toggle-btn:hover {
+      background-color: #FFC72C;
+      color: #005A36;
     }
 
     header h1 {
@@ -230,112 +266,118 @@
 <body>
 
   <!-- TOP PANEL -->
-  <header>
-    <h1>Methodist University</h1>
-    <h2>Department of Chemistry and Physical Science</h2>
+  <header id="topHeader">
+    <div class="header-toggle-bar">
+      <button class="header-toggle-btn" id="toggleHeaderBtn" onclick="toggleHeader(event)">▲ Collapse Header</button>
+    </div>
 
-    <!-- Mobile Hamburger Toggle -->
-    <button class="mobile-menu-toggle" onclick="toggleMobileMenu(event)">☰ Select Topic</button>
-    
-    <nav class="nav-container" id="mainNav">
-      <!-- Basic Dropdown -->
-      <div class="dropdown">
-        <button class="dropbtn" onclick="toggleDropdown(event)">Basic &#9660;</button>
-        <div class="dropdown-content">
-          <a href="#" onclick="loadURL('conversionFactor')">Conversion Factor</a>
-          <a href="#" onclick="loadURL('temperatureConversion')">Temperature Conversion</a>
-          <a href="#" onclick="loadURL('significantFigures')">Significant Figures</a>
-          <a href="#" onclick="loadURL('uncertainty')">Percent Uncertainty</a>
-          <a href="#" onclick="loadURL('stdDev')">Standard Deviation</a>
-        </div> 
-      </div>
+    <div class="header-content" id="headerContent">
+      <h1>Methodist University</h1>
+      <h2>Department of Chemistry and Physical Science</h2>
 
-      <!-- Chemistry Dropdown -->
-      <div class="dropdown">
-        <button class="dropbtn" onclick="toggleDropdown(event)">Chemistry &#9660;</button>
-        <div class="dropdown-content">
-          <a href="#" onclick="loadURL('genChem01')">General Chemistry I - Flash Quiz 01</a>
-          <a href="#" onclick="loadURL('genChem02')">General Chemistry I - Flash Quiz 02</a>
-          <a href="#" onclick="loadURL('genChem03')">General Chemistry I - Practice 03</a>
-          <a href="#" onclick="loadURL('isotopeMass')">Isotopes & Average Atomic Mass</a>
-          <a href="#" onclick="loadURL('nomenclature')">General Chemistry Nomenclature</a>
-          <a href="#" onclick="loadURL('organicNomenclature')">Organic Nomenclature</a>
-          <a href="#" onclick="loadURL('stoichiometry')">Stoichiometry</a>
-          <a href="#" onclick="loadURL('balancingEq')">Balancing Chemical Equation</a>
-          <a href="#" onclick="loadURL('redoxBalancer')">Redox Reaction Balancer</a>
-          <a href="#" onclick="loadURL('solubility')">Solubility Rules</a>
-          <a href="#" onclick="loadURL('gasLaws')">Gas Laws</a>
-          <a href="#" onclick="loadURL('thermochemistry')">Thermochemistry</a>
-          <a href="#" onclick="loadURL('qchemistry')">Quantum Chemistry</a>
-          <a href="#" onclick="loadURL('electronConfiguration')">Electron Configuration</a>
-          <a href="#" onclick="loadURL('lewisStructures')">Lewis Structures</a>
+      <!-- Mobile Hamburger Toggle -->
+      <button class="mobile-menu-toggle" onclick="toggleMobileMenu(event)">☰ Select Topic</button>
+      
+      <nav class="nav-container" id="mainNav">
+        <!-- Basic Dropdown -->
+        <div class="dropdown">
+          <button class="dropbtn" onclick="toggleDropdown(event)">Basic &#9660;</button>
+          <div class="dropdown-content">
+            <a href="#" onclick="loadURL('conversionFactor')">Conversion Factor</a>
+            <a href="#" onclick="loadURL('temperatureConversion')">Temperature Conversion</a>
+            <a href="#" onclick="loadURL('significantFigures')">Significant Figures</a>
+            <a href="#" onclick="loadURL('uncertainty')">Percent Uncertainty</a>
+            <a href="#" onclick="loadURL('stdDev')">Standard Deviation</a>
+          </div> 
         </div>
-      </div>
 
-      <!-- Chemistry Lab Dropdown -->
-      <div class="dropdown">
-        <button class="dropbtn" onclick="toggleDropdown(event)">Chemistry Lab &#9660;</button>
-        <div class="dropdown-content">
-          <a href="#" onclick="loadURL('ptProperties')">Periodic Table - Properties</a>
-          <a href="#" onclick="loadURL('ptGame')">Periodic Table - Game</a>
-          <a href="#" onclick="loadURL('titration')">Titration</a>
-          <a href="#" onclick="loadURL('constpcalori')">Constant Pressure Calorimetry</a>
-          <a href="#" onclick="loadURL('constvcalori')">Constant Volume Calorimetry</a>
-          <a href="#" onclick="loadURL('lineSpectra')">Line Spectra</a>
-          <a href="#" onclick="loadURL('HLineSpectra')">Hydrogen Line Spectra Series</a>
-          <a href="#" onclick="loadURL('gasLawSims')">Gas Laws Simulation</a>
-          <a href="#" onclick="loadURL('hydrogenicOrbitals')">Hydrogenic Orbitals</a>
-          <a href="#" onclick="loadURL('particle1DBox')">Particle in a Box</a>
-          <a href="#" onclick="loadURL('HRadialFunc')">Hydrogen Radial Functions</a>
-          <a href="#" onclick="loadURL('PlanckDistribution')">Planck's Distribution of Radiation Energy</a>
-          <a href="#" onclick="loadURL('maxwellDistribution')">Maxwell-Boltzmann Distribution</a>
-          <a href="#" onclick="loadURL('moleculeSketcher')">Molecule Sketcher</a>
-          <a href="#" onclick="loadURL('massWaterBeaker')">Mass of Water in a Beaker</a>
-          <a href="#" onclick="loadURL('massWaterGraduatedCylinder')">Mass of Water in a Graduated Cylinder</a>
-          <a href="#" onclick="loadURL('massWaterVolumetricPipet')">Mass of Water in a Volumetric Pipet</a>
-          <a href="#" onclick="loadURL('massSpectDemo')">Mass Spectrometry Demo</a>
+        <!-- Chemistry Dropdown -->
+        <div class="dropdown">
+          <button class="dropbtn" onclick="toggleDropdown(event)">Chemistry &#9660;</button>
+          <div class="dropdown-content">
+            <a href="#" onclick="loadURL('genChem01')">General Chemistry I - Flash Quiz 01</a>
+            <a href="#" onclick="loadURL('genChem02')">General Chemistry I - Flash Quiz 02</a>
+            <a href="#" onclick="loadURL('genChem03')">General Chemistry I - Practice 03</a>
+            <a href="#" onclick="loadURL('isotopeMass')">Isotopes & Average Atomic Mass</a>
+            <a href="#" onclick="loadURL('nomenclature')">General Chemistry Nomenclature</a>
+            <a href="#" onclick="loadURL('organicNomenclature')">Organic Nomenclature</a>
+            <a href="#" onclick="loadURL('stoichiometry')">Stoichiometry</a>
+            <a href="#" onclick="loadURL('balancingEq')">Balancing Chemical Equation</a>
+            <a href="#" onclick="loadURL('redoxBalancer')">Redox Reaction Balancer</a>
+            <a href="#" onclick="loadURL('solubility')">Solubility Rules</a>
+            <a href="#" onclick="loadURL('gasLaws')">Gas Laws</a>
+            <a href="#" onclick="loadURL('thermochemistry')">Thermochemistry</a>
+            <a href="#" onclick="loadURL('qchemistry')">Quantum Chemistry</a>
+            <a href="#" onclick="loadURL('electronConfiguration')">Electron Configuration</a>
+            <a href="#" onclick="loadURL('lewisStructures')">Lewis Structures</a>
+          </div>
         </div>
-      </div>
 
-      <!-- Physics Dropdown -->
-      <div class="dropdown">
-        <button class="dropbtn" onclick="toggleDropdown(event)">Physics &#9660;</button>
-        <div class="dropdown-content">
-          <a href="#" onclick="loadURL('kinematics')">Kinematic Equations Practice</a>
-          <a href="#" onclick="loadURL('kinematicsDemo')">Kinematics Demonstration</a>
-          <a href="#" onclick="loadURL('kinematicsGraphs')">Kinematics Graphs</a>
-          <a href="#" onclick="loadURL('vectors')">Vectors</a>
-          <a href="#" onclick="loadURL('vectorLab')">Vector Lab</a>
-          <a href="#" onclick="loadURL('kinematic2DVectors')">2D Kinematics & Vectors Practice</a>
-          <a href="#" onclick="loadURL('freebodydiagrams')">Free-Body Diagrams</a>
-          <a href="#" onclick="loadURL('dynamics')">Dynamics & Forces Practice</a>
-          <a href="#" onclick="loadURL('fricDragElas')">Friction, Drag, and Elasticity</a>
-          <a href="#" onclick="loadURL('cirMotion')">Circular Motion & Gravitation</a>
-          <a href="#" onclick="loadURL('workEnergy')">Work, Energy, & Power</a>
-          <a href="#" onclick="loadURL('momentum')">Momentum</a>
-          <a href="#" onclick="loadURL('staticTorque')">Static Equilibrium & Torque</a>
-          <a href="#" onclick="loadURL('rotationMotion')">Rotational Motion</a>
+        <!-- Chemistry Lab Dropdown -->
+        <div class="dropdown">
+          <button class="dropbtn" onclick="toggleDropdown(event)">Chemistry Lab &#9660;</button>
+          <div class="dropdown-content">
+            <a href="#" onclick="loadURL('ptProperties')">Periodic Table - Properties</a>
+            <a href="#" onclick="loadURL('ptGame')">Periodic Table - Game</a>
+            <a href="#" onclick="loadURL('titration')">Titration</a>
+            <a href="#" onclick="loadURL('constpcalori')">Constant Pressure Calorimetry</a>
+            <a href="#" onclick="loadURL('constvcalori')">Constant Volume Calorimetry</a>
+            <a href="#" onclick="loadURL('lineSpectra')">Line Spectra</a>
+            <a href="#" onclick="loadURL('HLineSpectra')">Hydrogen Line Spectra Series</a>
+            <a href="#" onclick="loadURL('gasLawSims')">Gas Laws Simulation</a>
+            <a href="#" onclick="loadURL('hydrogenicOrbitals')">Hydrogenic Orbitals</a>
+            <a href="#" onclick="loadURL('particle1DBox')">Particle in a Box</a>
+            <a href="#" onclick="loadURL('HRadialFunc')">Hydrogen Radial Functions</a>
+            <a href="#" onclick="loadURL('PlanckDistribution')">Planck's Distribution of Radiation Energy</a>
+            <a href="#" onclick="loadURL('maxwellDistribution')">Maxwell-Boltzmann Distribution</a>
+            <a href="#" onclick="loadURL('moleculeSketcher')">Molecule Sketcher</a>
+            <a href="#" onclick="loadURL('massWaterBeaker')">Mass of Water in a Beaker</a>
+            <a href="#" onclick="loadURL('massWaterGraduatedCylinder')">Mass of Water in a Graduated Cylinder</a>
+            <a href="#" onclick="loadURL('massWaterVolumetricPipet')">Mass of Water in a Volumetric Pipet</a>
+            <a href="#" onclick="loadURL('massSpectDemo')">Mass Spectrometry Demo</a>
+          </div>
         </div>
-      </div>
 
-      <!-- Graphing Dropdown -->
-      <div class="dropdown">
-        <button class="dropbtn" onclick="toggleDropdown(event)">Graphing &#9660;</button>
-        <div class="dropdown-content">
-          <a href="#" onclick="loadURL('dataGrapher')">Data Grapher</a>
-          <a href="#" onclick="loadURL('plotFunctions')">Plot Functions</a>
-          <a href="#" onclick="loadURL('plotPolar')">Plot Polar Functions</a>
-          <a href="#" onclick="loadURL('plot3dFunctions')">Plot 3D Functions</a>
-          <a href="#" onclick="loadURL('ternarygraph')">Ternary Grapher</a>
+        <!-- Physics Dropdown -->
+        <div class="dropdown">
+          <button class="dropbtn" onclick="toggleDropdown(event)">Physics &#9660;</button>
+          <div class="dropdown-content">
+            <a href="#" onclick="loadURL('kinematics')">Kinematic Equations Practice</a>
+            <a href="#" onclick="loadURL('kinematicsDemo')">Kinematics Demonstration</a>
+            <a href="#" onclick="loadURL('kinematicsGraphs')">Kinematics Graphs</a>
+            <a href="#" onclick="loadURL('vectors')">Vectors</a>
+            <a href="#" onclick="loadURL('vectorLab')">Vector Lab</a>
+            <a href="#" onclick="loadURL('kinematic2DVectors')">2D Kinematics & Vectors Practice</a>
+            <a href="#" onclick="loadURL('freebodydiagrams')">Free-Body Diagrams</a>
+            <a href="#" onclick="loadURL('dynamics')">Dynamics & Forces Practice</a>
+            <a href="#" onclick="loadURL('fricDragElas')">Friction, Drag, and Elasticity</a>
+            <a href="#" onclick="loadURL('cirMotion')">Circular Motion & Gravitation</a>
+            <a href="#" onclick="loadURL('workEnergy')">Work, Energy, & Power</a>
+            <a href="#" onclick="loadURL('momentum')">Momentum</a>
+            <a href="#" onclick="loadURL('staticTorque')">Static Equilibrium & Torque</a>
+            <a href="#" onclick="loadURL('rotationMotion')">Rotational Motion</a>
+          </div>
         </div>
-      </div>
-    </nav>
+
+        <!-- Graphing Dropdown -->
+        <div class="dropdown">
+          <button class="dropbtn" onclick="toggleDropdown(event)">Graphing &#9660;</button>
+          <div class="dropdown-content">
+            <a href="#" onclick="loadURL('dataGrapher')">Data Grapher</a>
+            <a href="#" onclick="loadURL('plotFunctions')">Plot Functions</a>
+            <a href="#" onclick="loadURL('plotPolar')">Plot Polar Functions</a>
+            <a href="#" onclick="loadURL('plot3dFunctions')">Plot 3D Functions</a>
+            <a href="#" onclick="loadURL('ternarygraph')">Ternary Grapher</a>
+          </div>
+        </div>
+      </nav>
+    </div>
   </header>
 
   <!-- LOWER PANEL / DISPLAY CANVAS -->
   <main id="canvasContainer">
     <div id="placeholder" class="placeholder-text">
-      Select a topic from the menu above to display the module.
+      Choose a module from the menu
     </div>
     <iframe id="displayCanvas" style="display:none;" title="Module Display Canvas"></iframe>
   </main>
@@ -410,15 +452,27 @@
       plotPolar: "https://cgphung-glitch.github.io/graphing/polar-plot.html" 
     };
 
-    // Fallback for browsers without dvh support: track the real visible
-    // viewport height in a CSS custom property so mobile address-bar
-    // resizing doesn't cut off the page.
+    // Fallback for browsers without dvh support
     function setViewportHeightVar() {
       document.documentElement.style.setProperty('--vh', (window.innerHeight * 0.01) + 'px');
     }
     setViewportHeightVar();
     window.addEventListener('resize', setViewportHeightVar);
     window.addEventListener('orientationchange', setViewportHeightVar);
+
+    // Toggle Collapsible Header
+    function toggleHeader(event) {
+      event.stopPropagation();
+      const header = document.getElementById('topHeader');
+      const btn = document.getElementById('toggleHeaderBtn');
+      header.classList.toggle('collapsed');
+      
+      if (header.classList.contains('collapsed')) {
+        btn.innerHTML = '▼ Expand Header';
+      } else {
+        btn.innerHTML = '▲ Collapse Header';
+      }
+    }
 
     // Toggle Mobile Navigation Panel
     function toggleMobileMenu(event) {
