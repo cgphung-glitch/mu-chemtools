@@ -362,6 +362,32 @@
   }
   .size-reset:hover { border-color: var(--accent); color: var(--accent); }
 
+  /* ---------- export popover (in the header) ---------- */
+  .export-wrap { position: relative; }
+  .export-pop {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    z-index: 50;
+    width: 244px;
+    max-width: calc(100vw - 28px);
+    display: grid;
+    gap: 8px;
+    padding: 10px;
+    border-radius: 13px;
+    border: 1px solid var(--line);
+    background: var(--panel);
+    box-shadow: var(--shadow-strong);
+  }
+  .export-pop[hidden] { display: none; }
+  .export-pop .btn { width: 100%; }
+  .export-note {
+    margin: 0;
+    font-size: 10.5px;
+    line-height: 1.45;
+    color: var(--muted);
+  }
+
   .board-wrap { padding: 4px 8px 0; }
   #board {
     display: block;
@@ -579,6 +605,24 @@
     color: var(--muted);
   }
 
+  .field-text { gap: 8px; }
+  .text-input {
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+    padding: 9px 10px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: var(--panel-2);
+    color: var(--ink);
+    font-size: 16px;
+    font-weight: 700;
+    outline: none;
+    transition: border-color 0.15s ease;
+  }
+  .text-input:focus { border-color: var(--accent); }
+  .text-input::placeholder { color: var(--muted); font-weight: 600; }
+
   input[type="range"] {
     -webkit-appearance: none;
     appearance: none;
@@ -765,6 +809,16 @@
     stroke-linejoin: round;
     pointer-events: none;
   }
+  .designator {
+    fill: var(--ink-2);
+    font-size: 17px;
+    font-weight: 700;
+    paint-order: stroke;
+    stroke: var(--board);
+    stroke-width: 6px;
+    stroke-linejoin: round;
+    pointer-events: none;
+  }
   .draft { stroke: var(--accent); stroke-width: 4.4; stroke-dasharray: 8 7; stroke-linecap: round; fill: none; }
   .draft-dot { fill: var(--accent); stroke: var(--board); stroke-width: 3; }
   .draft-ring { fill: none; stroke: var(--accent); stroke-width: 2; opacity: 0.6; }
@@ -859,6 +913,22 @@
     </div>
   </div>
   <div class="top-actions">
+    <div class="export-wrap">
+      <button class="icon-btn" id="exportBtn" type="button" aria-label="Export drawing" title="Export drawing" aria-haspopup="true" aria-expanded="false" aria-controls="exportPop">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 3.5v10.5"/><path d="m7.6 10 4.4 4.4 4.4-4.4"/><path d="M4 16.5V20h16v-3.5"/>
+        </svg>
+      </button>
+      <div class="export-pop" id="exportPop" role="group" aria-label="Export drawing" hidden>
+        <div class="size-head">
+          <span>Export</span>
+          <span class="size-note">SVG · PNG</span>
+        </div>
+        <button class="btn primary" id="exportSvgBtn" type="button">Save as SVG (vector)</button>
+        <button class="btn" id="exportPngBtn" type="button">Save as PNG (image)</button>
+        <p class="export-note">Parts, wires, labels and the current theme are included. Meter readings appear in Simulation mode.</p>
+      </div>
+    </div>
     <button class="icon-btn theme-btn" id="themeBtn" type="button" aria-label="Toggle dark mode" title="Toggle dark mode">
       <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/>
@@ -1051,6 +1121,7 @@
   };
 
   let drag = null;
+  let exporting = false;   // while exporting, the scene renders without the selection halo
   let history = [];
   let solution = emptySolution();
   let clearArmed = false;
@@ -1095,6 +1166,8 @@
     colsOut: document.getElementById('colsOut'),
     rowsOut: document.getElementById('rowsOut'),
     themeBtn: document.getElementById('themeBtn'),
+    exportBtn: document.getElementById('exportBtn'),
+    exportPop: document.getElementById('exportPop'),
     toast: document.getElementById('toast')
   };
 
@@ -1158,8 +1231,54 @@
     return abs.toExponential(1) + ' ' + unit;
   }
 
+  /* Text typed by the user goes into SVG markup, so escape it. */
+  function esc(text) {
+    return String(text).replace(/[&<>"']/g, function (ch) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch];
+    });
+  }
+
+  /* Reference designators for the element labels. */
+  const DESIGNATOR = {
+    battery: 'E', resistor: 'R', capacitor: 'C', inductor: 'L',
+    switch: 'S', voltmeter: 'V', ammeter: 'A', arrow: 'I', wire: 'W'
+  };
+  const LABEL_MAX = 24;
+
+  function nextDesignator(type, items) {
+    const prefix = DESIGNATOR[type] || 'X';
+    const list = items || state.items;
+    const pattern = new RegExp('^' + prefix + '(\\d+)$');
+    let highest = 0;
+    for (const item of list) {
+      const found = pattern.exec(String(item.label || '').trim());
+      if (found) highest = Math.max(highest, Number(found[1]));
+    }
+    return prefix + (highest + 1);
+  }
+
+  function cleanLabel(text) {
+    return String(text == null ? '' : text).replace(/\s+/g, ' ').trim().slice(0, LABEL_MAX);
+  }
+
+  /* Boards saved before labels existed get default designators once; after
+     that an empty label stays empty on purpose. */
+  function addMissingLabels(items) {
+    const taken = new Set();
+    for (const item of items) {
+      const label = cleanLabel(item.label);
+      if (label) taken.add(label);
+    }
+    for (const item of items) {
+      if (item.type === 'wire' || cleanLabel(item.label)) continue;
+      const known = Array.from(taken).map(function (label) { return { label: label }; });
+      item.label = nextDesignator(item.type, known);
+      taken.add(item.label);
+    }
+  }
+
   function createItem(type, x, y, rot) {
-    const base = { id: uid(), type: type, x: x, y: y, rot: rot || 0 };
+    const base = { id: uid(), type: type, x: x, y: y, rot: rot || 0, label: nextDesignator(type) };
     if (type === 'battery') return Object.assign(base, { mode: 'voltage', volts: 9, amps: 1 });
     if (type === 'resistor') return Object.assign(base, { ohms: 100 });
     if (type === 'switch') return Object.assign(base, { closed: true });
@@ -1365,8 +1484,16 @@
 
   function setSizePanel(open) {
     if (!els.sizePop || !els.sizeBtn) return;
+    if (open) setExportPanel(false);
     els.sizePop.hidden = !open;
     els.sizeBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+
+  function setExportPanel(open) {
+    if (!els.exportPop || !els.exportBtn) return;
+    if (open && els.sizePop && !els.sizePop.hidden) setSizePanel(false);
+    els.exportPop.hidden = !open;
+    els.exportBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
   }
 
   // Meters only show numbers in Simulation mode, and only once the circuit
@@ -1409,11 +1536,26 @@
     };
   }
 
+  /* The user's own label sits opposite the value, nudged inward near the edges
+     so a long name is not clipped by the board. */
+  function designatorPlacement(item) {
+    const cx = item.x * G;
+    const cy = item.y * G;
+    const right = COLS * G;
+    if (rotOf(item) % 2 === 1) {
+      if (cx > right - 110) return { x: cx - 33, y: cy - 16, anchor: 'end' };
+      return { x: cx + 33, y: cy - 16, anchor: 'start' };
+    }
+    if (cx < 90) return { x: cx - 34, y: cy - 31, anchor: 'start' };
+    if (cx > right - 90) return { x: cx + 34, y: cy - 31, anchor: 'end' };
+    return { x: cx, y: cy - 31, anchor: 'middle' };
+  }
+
   function partSVG(item) {
     const deg = rotOf(item) * 90;
     const cx = item.x * G;
     const cy = item.y * G;
-    const selected = item.id === state.selected;
+    const selected = item.id === state.selected && !exporting;
     let out = '<g class="part' + (selected ? ' is-selected' : '') + '" data-id="' + item.id + '">';
 
     if (selected) {
@@ -1434,16 +1576,31 @@
         '" text-anchor="' + pos.anchor + '">' + label.text + '</text>';
     }
 
+    if (item.label) {
+      const dp = designatorPlacement(item);
+      out += '<text class="designator" x="' + dp.x + '" y="' + dp.y +
+        '" text-anchor="' + dp.anchor + '">' + esc(item.label) + '</text>';
+    }
+
     out += '</g>';
     return out;
   }
 
   function wireSVG(item) {
-    const selected = item.id === state.selected;
-    return '<g class="wire' + (selected ? ' is-selected' : '') + '" data-id="' + item.id + '">' +
+    const selected = item.id === state.selected && !exporting;
+    let out = '<g class="wire' + (selected ? ' is-selected' : '') + '" data-id="' + item.id + '">' +
       '<line class="wire-line" x1="' + (item.x1 * G) + '" y1="' + (item.y1 * G) +
-      '" x2="' + (item.x2 * G) + '" y2="' + (item.y2 * G) + '"/>' +
-      '</g>';
+      '" x2="' + (item.x2 * G) + '" y2="' + (item.y2 * G) + '"/>';
+    if (item.label) {
+      const horizontal = item.y1 === item.y2;
+      const mx = ((item.x1 + item.x2) / 2) * G;
+      const my = ((item.y1 + item.y2) / 2) * G;
+      out += '<text class="designator" x="' + (horizontal ? mx : mx + 12) + '" y="' +
+        (horizontal ? my - 12 : my + 5) + '" text-anchor="' +
+        (horizontal ? 'middle' : 'start') + '">' + esc(item.label) + '</text>';
+    }
+    out += '</g>';
+    return out;
   }
 
   function renderScene() {
@@ -1692,6 +1849,11 @@
         : 'No reading — check the circuit for a short across a source.') + '</p>';
     }
 
+    html += '<div class="field field-text"><label for="labelInput">Label</label>' +
+      '<input class="text-input" id="labelInput" type="text" maxlength="' + LABEL_MAX + '" ' +
+      'autocomplete="off" spellcheck="false" value="' + esc(item.label || '') + '" ' +
+      'placeholder="No label" aria-label="Element label"></div>';
+
     if (item.type === 'battery') {
       const isCurrent = item.mode === 'current';
       html += '<div class="seg" role="group" aria-label="Source type">' +
@@ -1797,6 +1959,27 @@
   }
 
   function bindInspector(item) {
+    const labelInput = document.getElementById('labelInput');
+    if (labelInput) {
+      const commitLabel = function (trim) {
+        const next = cleanLabel(trim ? labelInput.value : labelInput.value.slice(0, LABEL_MAX));
+        if (trim) labelInput.value = next;
+        if (next === item.label) return;
+        item.label = next;
+        renderScene();
+        save();
+      };
+      labelInput.addEventListener('focus', function () { pushHistory(); });
+      labelInput.addEventListener('input', function () { commitLabel(false); });
+      labelInput.addEventListener('blur', function () { commitLabel(true); });
+      labelInput.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          labelInput.blur();
+        }
+      });
+    }
+
     els.inspector.querySelectorAll('[data-mode]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         item.mode = btn.dataset.mode;
@@ -2524,7 +2707,8 @@
         type: candidate.type,
         x: Number(candidate.x),
         y: Number(candidate.y),
-        rot: Number(candidate.rot)
+        rot: Number(candidate.rot),
+        label: typeof candidate.label === 'string' ? cleanLabel(candidate.label) : ''
       };
       item.rot = ((Math.round(item.rot) || 0) % 4 + 4) % 4;
 
@@ -2565,7 +2749,7 @@
   function save() {
     try {
       localStorage.setItem(STORE_KEY, JSON.stringify({
-        v: 3,
+        v: 4,
         cols: COLS,
         rows: ROWS,
         mode: state.mode,
@@ -2600,7 +2784,142 @@
     state.mode = parsed.mode === 'draw' ? 'draw' : 'sim';
     state.realism = parsed.realism === 'realistic' ? 'realistic' : 'ideal';
     state.items = sanitizeItems(parsed.items);
+    if (Number(parsed.v) < 4) addMissingLabels(state.items);
     return true;
+  }
+
+  /* ============================================================
+     Export
+     ============================================================ */
+
+  function themeColor(name, fallback) {
+    try {
+      const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+      return value || fallback;
+    } catch (e) {
+      return fallback;
+    }
+  }
+
+  /* Build a standalone SVG of the scene, with the theme's colours baked in so
+     the file looks the same outside this page. */
+  function exportSvgMarkup() {
+    exporting = true;
+    renderScene();
+    const scene = els.sceneLayer.innerHTML;
+    exporting = false;
+    renderScene();
+
+    const c = {
+      board: themeColor('--board', '#fbfdfb'),
+      line: themeColor('--line', '#d8e4dd'),
+      ink: themeColor('--ink', '#0c2a20'),
+      ink2: themeColor('--ink-2', '#174536'),
+      muted: themeColor('--muted', '#5f7d72'),
+      accent: themeColor('--accent', '#007a4a'),
+      wire: themeColor('--wire', '#143c2d'),
+      panel: themeColor('--panel', '#ffffff')
+    };
+    const pad = PAD * G;
+    const w = COLS * G + pad * 2;
+    const h = ROWS * G + pad * 2;
+    const style = [
+      'text{font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}',
+      '.wire-line{stroke:' + c.wire + ';stroke-width:4.2;stroke-linecap:round;fill:none}',
+      '.lead{stroke:' + c.ink + ';stroke-width:3.4;fill:none;stroke-linecap:round}',
+      '.body{stroke:' + c.ink + ';stroke-width:4;fill:none;stroke-linecap:round;stroke-linejoin:round}',
+      '.plate-short{stroke:' + c.ink + ';stroke-width:6.5;fill:none;stroke-linecap:round}',
+      '.plate-long{stroke:' + c.ink + ';stroke-width:3;fill:none;stroke-linecap:round}',
+      '.pol{stroke:' + c.accent + ';stroke-width:2.6;fill:none;stroke-linecap:round}',
+      '.node{fill:' + c.ink + '}',
+      '.meter-face{fill:' + c.panel + ';stroke:' + c.ink + ';stroke-width:3.2}',
+      '.meter-letter{fill:' + c.ink + ';font-size:25px;font-weight:800}',
+      '.arrow{stroke:' + c.accent + ';stroke-width:4.6;fill:none;stroke-linecap:round;stroke-linejoin:round}',
+      '.val{fill:' + c.muted + ';font-size:20px;font-weight:700;paint-order:stroke;stroke:' + c.board + ';stroke-width:7px;stroke-linejoin:round}',
+      '.reading{fill:' + c.accent + ';font-size:23px;font-weight:800;paint-order:stroke;stroke:' + c.board + ';stroke-width:7px;stroke-linejoin:round}',
+      '.designator{fill:' + c.ink2 + ';font-size:17px;font-weight:700;paint-order:stroke;stroke:' + c.board + ';stroke-width:6px;stroke-linejoin:round}'
+    ].join('');
+
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + Math.round(w) +
+      '" height="' + Math.round(h) + '" viewBox="' + (-pad) + ' ' + (-pad) + ' ' + w + ' ' + h + '">' +
+      '<style>' + style + '</style>' +
+      '<rect x="' + (-pad + 1) + '" y="' + (-pad + 1) + '" width="' + (w - 2) + '" height="' + (h - 2) +
+      '" rx="16" fill="' + c.board + '" stroke="' + c.line + '" stroke-width="2"/>' +
+      scene + '</svg>';
+
+    return { svg: svg, width: w, height: h, board: c.board };
+  }
+
+  function exportFilename(extension) {
+    const now = new Date();
+    const part = function (n) { return String(n).padStart(2, '0'); };
+    return 'circuit-' + now.getFullYear() + part(now.getMonth() + 1) + part(now.getDate()) +
+      '-' + part(now.getHours()) + part(now.getMinutes()) + '.' + extension;
+  }
+
+  function downloadBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.rel = 'noopener';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 5000);
+  }
+
+  function exportSvgFile() {
+    if (!state.items.length) {
+      showToast('Draw something before exporting');
+      return;
+    }
+    const built = exportSvgMarkup();
+    downloadBlob(new Blob([built.svg], { type: 'image/svg+xml;charset=utf-8' }), exportFilename('svg'));
+    showToast('SVG saved — check your downloads');
+  }
+
+  function exportPngFile() {
+    if (!state.items.length) {
+      showToast('Draw something before exporting');
+      return;
+    }
+    const built = exportSvgMarkup();
+    const blob = new Blob([built.svg], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const image = new Image();
+    const scale = 3; // print-friendly pixels
+
+    image.onload = function () {
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(built.width * scale);
+      canvas.height = Math.round(built.height * scale);
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        URL.revokeObjectURL(url);
+        showToast('PNG export is not available — try SVG');
+        return;
+      }
+      ctx.fillStyle = built.board;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(url);
+      canvas.toBlob(function (png) {
+        if (!png) {
+          showToast('Could not build the PNG — try SVG');
+          return;
+        }
+        downloadBlob(png, exportFilename('png'));
+        showToast('PNG saved — check your downloads');
+      }, 'image/png');
+    };
+
+    image.onerror = function () {
+      URL.revokeObjectURL(url);
+      showToast('Could not render the image — try SVG');
+    };
+
+    image.src = url;
   }
 
   /* ============================================================
@@ -2620,12 +2939,12 @@
       items.push({ id: uid(), type: 'wire', x1: x1, y1: y1, x2: x2, y2: y2 });
     }
 
-    add('battery', 2, 7, 3, { volts: 9, mode: 'voltage' });
-    add('resistor', 6, 3, 0, { ohms: 100 });
-    add('switch', 6, 11, 0, { closed: true });
-    add('ammeter', 10, 7, 1);
-    add('voltmeter', 6, 7, 0);
-    add('arrow', 8, 2, 0);
+    add('battery', 2, 7, 3, { volts: 9, mode: 'voltage', label: 'E1' });
+    add('resistor', 6, 3, 0, { ohms: 100, label: 'R1' });
+    add('switch', 6, 11, 0, { closed: true, label: 'S1' });
+    add('ammeter', 10, 7, 1, { label: 'A1' });
+    add('voltmeter', 6, 7, 0, { label: 'V1' });
+    add('arrow', 8, 2, 0, { label: 'I' });
 
     wire(2, 6, 2, 3);
     wire(2, 3, 5, 3);
@@ -2737,6 +3056,25 @@
       });
     }
 
+    if (els.exportBtn) {
+      els.exportBtn.addEventListener('click', function (event) {
+        event.stopPropagation();
+        setExportPanel(els.exportPop.hidden);
+      });
+      els.exportPop.addEventListener('click', function (event) {
+        const btn = event.target.closest('button');
+        if (!btn) return;
+        setExportPanel(false);
+        if (btn.id === 'exportPngBtn') exportPngFile();
+        else if (btn.id === 'exportSvgBtn') exportSvgFile();
+      });
+      document.addEventListener('pointerdown', function (event) {
+        if (els.exportPop.hidden) return;
+        if (els.exportPop.contains(event.target) || els.exportBtn.contains(event.target)) return;
+        setExportPanel(false);
+      });
+    }
+
     els.undoBtn.addEventListener('click', undo);
     els.rotateBtn.addEventListener('click', rotateSelected);
     els.deleteBtn.addEventListener('click', deleteSelected);
@@ -2780,6 +3118,11 @@
         return;
       }
       if (event.key === 'Escape') {
+        if (els.exportPop && !els.exportPop.hidden) {
+          setExportPanel(false);
+          els.exportBtn.focus({ preventScroll: true });
+          return;
+        }
         if (els.sizePop && !els.sizePop.hidden) {
           setSizePanel(false);
           els.sizeBtn.focus({ preventScroll: true });
