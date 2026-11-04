@@ -147,7 +147,6 @@
 
   /* ---------- layout ---------- */
   main {
-    max-width: 1040px;
     margin: 0 auto;
     padding: 12px;
     padding-bottom: calc(28px + env(safe-area-inset-bottom));
@@ -170,6 +169,32 @@
   .chips {
     display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
     padding: 2px 0 6px;
+  }
+
+  .nudge-bar {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+    margin-top: 2px; padding: 7px 2px 5px;
+    border-top: 1px solid var(--line);
+  }
+  .nudge-bar[hidden] { display: none; }
+  .nudge-bar .nb-name {
+    font-size: 12.5px; font-weight: 650;
+    padding: 4px 9px; border-radius: 999px;
+    border: 1px solid var(--readout-border);
+    background: var(--accent-soft); color: var(--accent);
+    max-width: 46vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .nudge-bar .nb-pills { margin-left: auto; }
+  .nudge-bar .nb-hint {
+    flex-basis: 100%; font-size: 11.5px; color: var(--muted); line-height: 1.35;
+  }
+  .nudge-bar .nb-hint kbd {
+    font: inherit; font-weight: 650; padding: 0 3px;
+    border: 1px solid var(--line); border-radius: 4px; background: var(--panel-2);
+  }
+  @media (max-width: 559px) {
+    /* no keyboard on a phone: keep the bar one row tall */
+    .nudge-bar .nb-hint { display: none; }
   }
 
   .chip {
@@ -214,13 +239,14 @@
   .mass-block { stroke-width: 2.2; }
   .mass-text { font-size: 20px; font-weight: 650; dominant-baseline: middle; text-anchor: middle; }
   .mass-sub { font-size: 19px; dominant-baseline: middle; text-anchor: middle; }
-  .mass-x { font-size: 19px; text-anchor: middle; }
+  .mass-x, .pivot-x { font-size: 19px; text-anchor: middle; }
   .dim { stroke-width: 1.8; stroke-dasharray: 7 5; }
   .dim-tick { stroke-width: 1.8; }
   .dim-text { font-size: 20px; font-weight: 600; text-anchor: middle; }
   .dim-text.small { font-size: 17px; font-weight: 500; }
   .cg-mark { fill: var(--gold); }
   .cg-text { fill: var(--gold); font-size: 19px; font-weight: 650; text-anchor: middle; }
+  .stick-mass { fill: var(--ink-2); font-size: 20px; font-weight: 600; }
   .world-note { fill: var(--muted); font-size: 19px; text-anchor: middle; }
   .sel-ring { fill: none; stroke: var(--accent); stroke-width: 2.5; stroke-dasharray: 8 6; }
   .net-arc { fill: none; stroke-width: 3.4; stroke-linecap: round; }
@@ -232,9 +258,10 @@
   svg#board.compact .ruler-num { font-size: 30px; }
   svg#board.compact .mass-text { font-size: 28px; }
   svg#board.compact .mass-sub { font-size: 26px; }
-  svg#board.compact .mass-x { font-size: 25px; }
+  svg#board.compact .mass-x, svg#board.compact .pivot-x { font-size: 25px; }
   svg#board.compact .dim-text { font-size: 27px; }
   svg#board.compact .cg-text { font-size: 25px; }
+  svg#board.compact .stick-mass { font-size: 28px; }
   svg#board.compact .world-note { font-size: 25px; }
 
   /* ---------- cards ---------- */
@@ -523,6 +550,37 @@
     .slider { height: 30px; }
   }
 
+  /* Laptop/desktop: fill the window, board on the left, every panel on the right. */
+  @media (min-width: 900px) {
+    main {
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+      grid-template-areas:
+        "stage case"
+        "stage cols"
+        "stage data"
+        "stage exp"
+        "stage app"
+        "stage foot";
+      align-items: start;
+      gap: 14px;
+    }
+    .stage { grid-area: stage; align-self: start; }
+    .case-card { grid-area: case; }
+    .cols { grid-area: cols; grid-template-columns: 1fr; }
+    .data-card { grid-area: data; }
+    .export-card { grid-area: exp; }
+    .app-card { grid-area: app; }
+    footer.foot { grid-area: foot; }
+    /* the board is sized by the width of its column, not clipped by a height cap */
+    svg#board { max-height: none; }
+  }
+
+  /* only put Controls and Hangers side by side when the right column is wide enough */
+  @media (min-width: 1500px) {
+    .cols { grid-template-columns: 1fr 1fr; }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .switch::after { transition: none; }
     .toast { transition: none; }
@@ -561,12 +619,13 @@
 <main>
   <section class="stage" aria-label="Meterstick balance">
     <div class="chips" id="chips"></div>
+    <div class="nudge-bar" id="nudgeBar" role="group" aria-label="Fine position control" hidden></div>
     <svg id="board" viewBox="0 0 1000 500" preserveAspectRatio="xMidYMid meet" role="img"
          aria-label="Meterstick balance diagram"></svg>
     <p class="sr-only" id="liveVerdict" aria-live="polite"></p>
   </section>
 
-  <section class="card" aria-label="Experiment case">
+  <section class="card case-card" aria-label="Experiment case">
     <h2>Experiment case</h2>
     <div class="case-row" id="caseChips"></div>
     <h3 class="case-title" id="caseTitle"></h3>
@@ -596,7 +655,7 @@
     </section>
   </div>
 
-  <section class="card" aria-label="Measured data">
+  <section class="card data-card" aria-label="Measured data">
     <h2>
       <span>Data &amp; torques</span>
       <span class="unit-toggle" id="unitToggle"></span>
@@ -605,7 +664,17 @@
     <div id="unknownBox"></div>
   </section>
 
-  <section class="card" aria-label="Apparatus settings">
+  <section class="card export-card" aria-label="Export">
+    <h2>Export</h2>
+    <div class="pills">
+      <button class="pill sm" id="exportPng" type="button">Board image (PNG)</button>
+      <button class="pill sm" id="exportCsv" type="button">All cases (CSV)</button>
+    </div>
+    <p class="note" style="margin-top:8px">The PNG is the board exactly as it stands. The CSV
+      lists every case's elements with its pivot, lever arms and torques.</p>
+  </section>
+
+  <section class="card app-card" aria-label="Apparatus settings">
     <h2>Apparatus</h2>
     <div class="grid3">
       <div>
@@ -687,6 +756,9 @@
 
   function clamp(v, lo, hi) { return v < lo ? lo : (v > hi ? hi : v); }
   function round1(v) { return Math.round(v * 10) / 10; }
+  // One physical metre stick for every setup: the same mass in all cases, so the
+  // recorded torques and the answer keys agree from case to case. Editable in Apparatus.
+  var STICK_MASS = 89.5;
   function uid() { return 'h' + Math.random().toString(36).slice(2, 9); }
 
   function esc(s) {
@@ -722,7 +794,7 @@
         'The stick is in equilibrium when the counter-clockwise and clockwise torques are equal.'
       ],
       setup: {
-        pivot: 50, stickMass: 150, stickCG: 50, clampMass: 0,
+        pivot: 50, stickCG: 50, clampMass: 0,
         items: [{ role: 'm1', mass: 200, x: 20 }, { role: 'm2', mass: 100, x: 74 }]
       }
     },
@@ -738,7 +810,7 @@
         'Record r1, r2, both torques and their percent difference.'
       ],
       setup: {
-        pivot: 50, stickMass: 150, stickCG: 50, clampMass: 0,
+        pivot: 50, stickCG: 50, clampMass: 0,
         items: [{ role: 'm1', mass: 100, x: 15 }, { role: 'm2', mass: 200, x: 78 }]
       }
     },
@@ -754,7 +826,7 @@
         'Record all three lever arms and compare the two torque sums.'
       ],
       setup: {
-        pivot: 50, stickMass: 150, stickCG: 50, clampMass: 0,
+        pivot: 50, stickCG: 50, clampMass: 0,
         items: [
           { role: 'm1', mass: 100, x: 30 },
           { role: 'm2', mass: 200, x: 70 },
@@ -774,7 +846,7 @@
         'Move m3 to the correct side and slide it until the stick balances, then compare your prediction with the measurement.'
       ],
       setup: {
-        pivot: 50, stickMass: 150, stickCG: 50, clampMass: 0,
+        pivot: 50, stickCG: 50, clampMass: 0,
         items: [
           { role: 'm1', mass: 100, x: 20 },
           { role: 'm2', mass: 200, x: 60 },
@@ -799,7 +871,7 @@
         'Use r\u1d64m\u1d64 = r\u2096m\u2096 to compute your value for m\u1d64, then weigh it on the lab balance and compare.'
       ],
       setup: {
-        pivot: 50, stickMass: 150, stickCG: 50, clampMass: 0,
+        pivot: 50, stickCG: 50, clampMass: 0,
         items: [
           { role: 'm\u1d64', mass: null, x: 10, unknown: true },
           { role: 'm\u2096', mass: 200, x: 85 }
@@ -823,7 +895,7 @@
         '(5b) Turn on \u201cSplit the stick into two segments\u201d to see each part of the stick\u2019s own weight and its torque; the two segments give the same total as treating the whole stick as a mass at its CG.'
       ],
       setup: {
-        pivot: 40, stickMass: 150, stickCG: 50, clampMass: 0,
+        pivot: 40, stickCG: 50, clampMass: 0,
         items: [{ role: 'm1', mass: 100, x: 0 }]
       }
     },
@@ -839,7 +911,7 @@
         'Compare the counter-clockwise and clockwise torque sums.'
       ],
       setup: {
-        pivot: 34, stickMass: 150, stickCG: 50, clampMass: 0,
+        pivot: 34, stickCG: 50, clampMass: 0,
         items: [{ role: 'm1', mass: 100, x: 0 }, { role: 'm2', mass: 100, x: 60 }]
       }
     },
@@ -854,7 +926,7 @@
         'Watch how the system\u2019s center of gravity shifts as m2 moves to the right.'
       ],
       setup: {
-        pivot: 34, stickMass: 150, stickCG: 50, clampMass: 0,
+        pivot: 34, stickCG: 50, clampMass: 0,
         items: [{ role: 'm1', mass: 100, x: 0 }, { role: 'm2', mass: 100, x: 70 }]
       }
     },
@@ -869,7 +941,7 @@
         'Keep this balance point: the next case asks you to predict where it goes for 90 cm.'
       ],
       setup: {
-        pivot: 34, stickMass: 150, stickCG: 50, clampMass: 0,
+        pivot: 34, stickCG: 50, clampMass: 0,
         items: [{ role: 'm1', mass: 100, x: 0 }, { role: 'm2', mass: 100, x: 80 }]
       }
     },
@@ -884,7 +956,12 @@
         'Then slide the fulcrum until it balances and compare your prediction with the measurement.'
       ],
       setup: {
-        pivot: 44.3, stickMass: 150, stickCG: 50, clampMass: 0,
+        // 6(d) starts where 6(c) balanced, so that bearing has to be worked out
+        // from the stick's actual mass rather than hard-coded for a 150 g stick
+        pivot: function (s) {
+          return balancePivot(s, [{ m: 100, x: 0 }, { m: 100, x: 80 }]);
+        },
+        stickCG: 50, clampMass: 0,
         items: [{ role: 'm1', mass: 100, x: 0 }, { role: 'm2', mass: 100, x: 90 }]
       },
       predict: {
@@ -900,13 +977,27 @@
     return CASES[0];
   }
 
+  // Pivot that balances a given set of hanging masses plus the stick itself.
+  // Takes the case's own CG so a setup can be computed before it is loaded.
+  function balancePivot(s, pairs) {
+    var num = 0, den = 0;
+    for (var i = 0; i < pairs.length; i++) {
+      num += pairs[i].m * pairs[i].x;
+      den += pairs[i].m;
+    }
+    num += state.stickMass * s.stickCG;
+    den += state.stickMass;
+    if (den <= 0) return 0;
+    return round1(num / den);
+  }
+
   /* ============================================================
      State
      ============================================================ */
 
   var state = {
     pivot: 50,
-    stickMass: 150,
+    stickMass: STICK_MASS,
     stickCG: 50,
     clampMass: 0,
     g: 9.8,
@@ -1093,7 +1184,7 @@
   function blockWidth(it) {
     if (it.unknown && !state.revealed) return 42;
     var m = Math.max(massOf(it), 1);
-    return clamp(34 * Math.pow(m / 100, 0.4), 30, 84);
+    return clamp(34 * Math.pow(m / 100, 0.4), 46, 84);
   }
 
   function sideColor(t) {
@@ -1140,6 +1231,7 @@
       beamContent.push('<text class="cg-text" x="' + num(cgX, 2) + '" y="' + cgText + '">CG</text>');
     }
 
+
     // ---- lever arms (labels get a row by position so neighbours never share one)
     var dimItems = [];
     for (var i = 0; i < state.items.length; i++) {
@@ -1182,7 +1274,14 @@
     // ---- hanging masses (kept vertical, hung from the rotated attachment point)
     var blockH = compact ? 66 : BLOCK_H;
     var line1 = compact ? 16 : 15;
-    var line2 = compact ? 50 : 33;
+    // the mass label sits outside the block, under it: the block is only 30-84
+    // units wide, which is too narrow for "100 g" at a readable size
+    var massLabelY = HANG + blockH + (compact ? 30 : 22);
+    var posLabelY = massLabelY + 34;
+    var labelBlockH = compact ? massLabelY + 22 : posLabelY + 16;
+    // deepest point any hanger (plus its labels) can reach at full tilt, so the
+    // viewBox can grow instead of cutting a label off at the ends of the stick
+    var deepest = 0;
     refs.blockH = blockH;
     var hangerContent = [];
     for (var h = 0; h < state.items.length; h++) {
@@ -1191,8 +1290,11 @@
       var w2 = blockWidth(hi);
       var dm = displayMass(hi);
       var col2 = state.selected === hi.id ? 'var(--accent)' : 'var(--ink-2)';
+      var ringH = labelBlockH;
+      var reach = BEAM_Y + Math.abs(cmToX(hi.x) - cmToX(state.pivot)) * Math.sin(TILT_MAX * Math.PI / 180) + ringH;
+      if (reach > deepest) deepest = reach;
       var selRing = state.selected === hi.id
-        ? '<rect class="sel-ring" x="' + num(-w2 / 2 - 11, 1) + '" y="-8" width="' + num(w2 + 22, 1) + '" height="' + (HANG + blockH + 30) + '" rx="12"/>'
+        ? '<rect class="sel-ring" x="' + num(-w2 / 2 - 11, 1) + '" y="-8" width="' + num(w2 + 22, 1) + '" height="' + num(ringH, 1) + '" rx="12"/>'
         : '';
       var massLine = dm == null ? '? g' : (num(dm, dm % 1 === 0 ? 0 : 1) + ' g');
       hangerContent.push(
@@ -1202,9 +1304,9 @@
           '<line class="hanger" x1="0" y1="0" x2="0" y2="' + HANG + '"/>' +
           '<rect class="mass-block" x="' + num(-w2 / 2, 1) + '" y="' + HANG + '" width="' + num(w2, 1) + '" height="' + blockH + '" rx="6" fill="var(--panel-2)" stroke="' + col2 + '"/>' +
           '<text class="mass-text" x="0" y="' + (HANG + line1) + '" fill="' + col2 + '">' + esc(hi.role) + '</text>' +
-          '<text class="mass-sub" x="0" y="' + (HANG + line2) + '" fill="var(--ink-2)">' + massLine + '</text>' +
-          (compact ? '' : '<text class="mass-x" x="0" y="' + (HANG + blockH + 26) + '" fill="var(--muted)">x = ' + num(hi.x, 1) + ' cm</text>') +
-          '<rect class="hit" data-hit="' + esc(hi.id) + '" x="' + num(-w2 / 2 - 16, 1) + '" y="-14" width="' + num(w2 + 32, 1) + '" height="' + (HANG + blockH + 52) + '" rx="10"/>' +
+          '<text class="mass-sub" x="0" y="' + massLabelY + '" fill="' + col2 + '">' + massLine + '</text>' +
+          (compact ? '' : '<text class="mass-x" x="0" y="' + posLabelY + '" fill="var(--muted)">x = ' + num(hi.x, 1) + ' cm</text>') +
+          '<rect class="hit" data-hit="' + esc(hi.id) + '" x="' + num(-w2 / 2 - 16, 1) + '" y="-14" width="' + num(w2 + 32, 1) + '" height="' + (ringH + 14) + '" rx="10"/>' +
         '</g>');
     }
     refs.hangers.forEach(function (ref) {
@@ -1216,7 +1318,8 @@
       '<path class="stand" d="M ' + num(px - 34, 2) + ' ' + (BEAM_Y + BEAM_H / 2 + 2) + ' L ' + num(px, 2) + ' ' + (BEAM_Y - 2) +
         ' L ' + num(px + 34, 2) + ' ' + (BEAM_Y + BEAM_H / 2 + 2) + ' Z"/>',
       '<rect class="stand-soft" x="' + num(px - 54, 2) + '" y="' + (BEAM_Y + 46) + '" width="108" height="12" rx="4"/>',
-      '<rect class="stand" x="' + num(px - 4, 2) + '" y="' + (BEAM_Y + 30) + '" width="8" height="18"/>'
+      '<rect class="stand" x="' + num(px - 4, 2) + '" y="' + (BEAM_Y + 30) + '" width="8" height="18"/>',
+      '<text class="pivot-x" x="' + num(px, 2) + '" y="' + (BEAM_Y + 82) + '" fill="var(--muted)">x = ' + num(state.pivot, 1) + ' cm</text>'
     ];
 
     // ---- net torque arrow
@@ -1233,8 +1336,11 @@
         '<path d="M ' + num(p2.x, 2) + ' ' + num(p2.y, 2) + ' l ' + (cwDir ? -7 : 7) + ' -1 l ' + (cwDir ? 6 : -6) + ' 7 z" fill="' + col3 + '"/>';
     }
 
+    svg.setAttribute('viewBox', '0 0 ' + VIEW.w + ' ' + Math.round(Math.max(VIEW.h, deepest + 10)));
+
     svg.innerHTML =
       '<g id="world">' +
+        '<text class="stick-mass" x="16" y="30">stick ' + num(state.stickMass, state.stickMass % 1 === 0 ? 0 : 1) + ' g</text>' +
         stand.join('') +
         '<g id="beamGroup" transform="rotate(' + num(theta, 3) + ' ' + num(px, 2) + ' ' + BEAM_Y + ')">' +
           beamContent.join('') +
@@ -1495,6 +1601,48 @@
       state.selected = null;
       render();
       toast('Removed ' + it.role);
+    });
+  }
+
+  /* ------------------------------------------------------------------
+     Fine position control (under the board, so it is next to the stick)
+     ------------------------------------------------------------------ */
+
+  function nudgeSelected(delta) {
+    if (state.selected === 'pivot') {
+      state.pivot = round1(clamp(state.pivot + delta, 0, LEN));
+    } else {
+      var it = getItem(state.selected);
+      if (!it) return;
+      it.x = round1(clamp(it.x + delta, 0, LEN));
+    }
+    render();
+  }
+
+  function renderNudgeBar() {
+    var bar = document.getElementById('nudgeBar');
+    var isPivot = state.selected === 'pivot';
+    var it = isPivot ? null : getItem(state.selected);
+    if (!isPivot && !it) { bar.hidden = true; bar.innerHTML = ''; return; }
+
+    var val = isPivot ? state.pivot : it.x;
+    bar.innerHTML =
+      '<span class="nb-name">' + esc(isPivot ? 'Fulcrum' : it.role) + '</span>' +
+      '<span class="readout"><span id="nbVal">' + num(val, 1) + '</span> <span class="u">cm</span></span>' +
+      '<span class="pills nb-pills">' +
+        '<button class="pill sm" type="button" data-nb="-1" aria-label="Move back 1 centimetre">\u22121</button>' +
+        '<button class="pill sm" type="button" data-nb="-0.1" aria-label="Move back 0.1 centimetre">\u22120.1</button>' +
+        '<button class="pill sm" type="button" data-nb="0.1" aria-label="Move forward 0.1 centimetre">+0.1</button>' +
+        '<button class="pill sm" type="button" data-nb="1" aria-label="Move forward 1 centimetre">+1</button>' +
+      '</span>' +
+      '<span class="nb-hint">Tap \u00b10.1 cm, or use <kbd>\u2190</kbd> <kbd>\u2192</kbd> ' +
+        '(hold <kbd>Shift</kbd> for 1 cm). Rounds to 0.1 cm and stays on the stick.</span>';
+    bar.hidden = false;
+
+    bar.querySelectorAll('[data-nb]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        nudgeSelected(parseFloat(b.getAttribute('data-nb')));
+      });
     });
   }
 
@@ -1790,13 +1938,165 @@
   }
 
   /* ============================================================
+     Export: the board as a PNG, every case as one CSV
+     ============================================================ */
+
+  function download(blob, name) {
+    var a = document.createElement('a');
+    var u = URL.createObjectURL(blob);
+    a.href = u;
+    a.download = name;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function () { URL.revokeObjectURL(u); a.remove(); }, 1000);
+  }
+
+  // The board is styled by the page's CSS and by CSS variables, none of which travel
+  // with a serialised SVG, so copy the computed presentation values onto a clone.
+  function exportBoard(scale, name) {
+    var svg = document.getElementById('board');
+    var clone = svg.cloneNode(true);
+    var vb = (svg.getAttribute('viewBox') || '0 0 1000 500').split(/\s+/).map(Number);
+    var props = ['fill', 'stroke', 'stroke-width', 'stroke-dasharray', 'stroke-dashoffset',
+      'stroke-linecap', 'stroke-linejoin', 'font-size', 'font-family', 'font-weight',
+      'font-style', 'text-anchor', 'dominant-baseline', 'opacity', 'fill-opacity', 'stroke-opacity'];
+    var src = svg.querySelectorAll('*');
+    var dst = clone.querySelectorAll('*');
+    for (var i = 0; i < src.length; i++) {
+      var cs = window.getComputedStyle(src[i]);
+      for (var p = 0; p < props.length; p++) {
+        var v = cs.getPropertyValue(props[p]);
+        if (!v) continue;
+        v = v.trim();
+        if (v === 'auto' || v === 'normal' || v === 'initial') continue;
+        if (v === 'none' && props[p] !== 'fill' && props[p] !== 'stroke') continue;
+        dst[i].setAttribute(props[p], v);
+      }
+    }
+    clone.removeAttribute('class');
+    clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    clone.setAttribute('width', vb[2]);
+    clone.setAttribute('height', vb[3]);
+
+    var xml = '<?xml version="1.0" encoding="UTF-8"?>' + new XMLSerializer().serializeToString(clone);
+    var img = new Image();
+    img.onload = function () {
+      var canvas = document.createElement('canvas');
+      canvas.width = Math.round(vb[2] * scale);
+      canvas.height = Math.round(vb[3] * scale);
+      var ctx = canvas.getContext('2d');
+      ctx.fillStyle = window.getComputedStyle(document.querySelector('.stage')).backgroundColor || '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob(function (blob) {
+        if (!blob) { toast('Could not render the board image'); return; }
+        download(blob, name);
+        toast('Board image saved');
+      }, 'image/png');
+    };
+    img.onerror = function () { toast('Could not render the board image'); };
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(xml);
+  }
+
+  // One flat spec per case, so the same arithmetic serves the live setup and the presets.
+  function liveSpec() {
+    return {
+      pivot: state.pivot,
+      stickCG: state.stickCG,
+      clampMass: state.clampMass,
+      items: state.items.map(function (it) {
+        return { role: it.role, x: it.x, mass: displayMass(it) };
+      })
+    };
+  }
+
+  function presetSpec(c) {
+    var s = c.setup;
+    return {
+      pivot: typeof s.pivot === 'function' ? s.pivot(s) : s.pivot,
+      stickCG: s.stickCG,
+      clampMass: s.clampMass || 0,
+      items: s.items.map(function (o) {
+        return { role: o.role, x: o.x, mass: o.unknown ? null : o.mass };
+      })
+    };
+  }
+
+  function setupData(spec) {
+    var clamp = spec.clampMass || 0;
+    var rows = [], cw = 0, ccw = 0, hidden = false;
+    for (var i = 0; i < spec.items.length; i++) {
+      var it = spec.items[i];
+      var r = Math.abs(round1(it.x - spec.pivot));
+      var side = it.x < spec.pivot ? 'CCW' : (it.x > spec.pivot ? 'CW' : '—');
+      if (it.mass == null) {
+        hidden = true;
+        rows.push({ el: it.role, m: '?', x: it.x, r: r, side: side, t: null });
+        continue;
+      }
+      var m = it.mass + clamp;
+      var t = m * (it.x - spec.pivot);
+      if (t >= 0) cw += t; else ccw += -t;
+      rows.push({ el: it.role, m: m, x: it.x, r: r, side: side, t: t });
+    }
+    var ts = state.stickMass * (spec.stickCG - spec.pivot);
+    if (ts >= 0) cw += ts; else ccw += -ts;
+    rows.push({
+      el: 'meterstick at CG', m: state.stickMass, x: spec.stickCG,
+      r: Math.abs(round1(spec.stickCG - spec.pivot)),
+      side: Math.abs(spec.stickCG - spec.pivot) < 0.05 ? '—' : (spec.stickCG < spec.pivot ? 'CCW' : 'CW'),
+      t: ts
+    });
+    return { rows: rows, cw: cw, ccw: ccw, hidden: hidden, pivot: spec.pivot };
+  }
+
+  function csvCell(v) {
+    var s = v == null ? '' : String(v);
+    return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  }
+
+  function exportCasesCsv() {
+    var toNm = function (gcm) { return gcm / 1000 * state.g / 100; };
+    var head = ['case_id', 'case', 'element', 'mass_g', 'x_cm', 'lever_arm_cm', 'side',
+      'torque_Nm', 'percent_difference', 'pivot_cm'];
+    var lines = [head.join(',')];
+
+    for (var i = 0; i < CASES.length; i++) {
+      var c = CASES[i];
+      var d = setupData(c.id === state.caseId ? liveSpec() : presetSpec(c));
+      for (var r = 0; r < d.rows.length; r++) {
+        var row = d.rows[r];
+        lines.push([
+          c.id, c.chip, row.el,
+          row.m === '?' ? '?' : num(row.m, row.m % 1 === 0 ? 0 : 1),
+          num(row.x, 1), num(row.r, 1), row.side,
+          row.t == null ? '' : toNm(row.t).toFixed(4), '', num(d.pivot, 1)
+        ].map(csvCell).join(','));
+      }
+      lines.push([c.id, c.chip, 'sum of counter-clockwise torques', '', '', '', '',
+        d.hidden ? '?' : toNm(d.ccw).toFixed(4), '', num(d.pivot, 1)].map(csvCell).join(','));
+      lines.push([c.id, c.chip, 'sum of clockwise torques', '', '', '', '',
+        d.hidden ? '?' : toNm(d.cw).toFixed(4), '', num(d.pivot, 1)].map(csvCell).join(','));
+      lines.push([c.id, c.chip, 'percent difference', '', '', '', '', '',
+        (d.hidden || d.cw + d.ccw === 0) ? '' :
+          (Math.abs(d.cw - d.ccw) / ((d.cw + d.ccw) / 2) * 100).toFixed(2),
+        num(d.pivot, 1)].map(csvCell).join(','));
+    }
+
+    var csv = '\ufeff' + lines.join('\r\n') + '\r\n';
+    download(new Blob([csv], { type: 'text/csv;charset=utf-8' }), 'torque-balance-all-cases.csv');
+    toast('Exported ' + CASES.length + ' cases to CSV');
+  }
+
+  /* ============================================================
      Storage & cases
      ============================================================ */
 
   function save() {
     try {
       localStorage.setItem(STORE_KEY, JSON.stringify({
-        v: 4,
+        v: 5,
         pivot: state.pivot,
         stickMass: state.stickMass,
         stickCG: state.stickCG,
@@ -1845,7 +2145,9 @@
 
     state.pivot = round1(clamp(Number(raw.pivot), 0, LEN));
     if (!isFinite(state.pivot)) state.pivot = 50;
-    state.stickMass = clamp(Number(raw.stickMass) || 150, 1, 2000);
+    // v4 and earlier stored a randomly drawn stick mass; the stick is now one fixed
+    // mass shared by every case, so an older setup adopts it once (edits persist from v5 on)
+    state.stickMass = raw.v === 5 ? round1(clamp(Number(raw.stickMass) || STICK_MASS, 1, 2000)) : STICK_MASS;
     state.stickCG = round1(clamp(Number(raw.stickCG) || 50, 0, LEN));
     state.clampMass = clamp(Number(raw.clampMass) || 0, 0, 200);
     state.g = clamp(Number(raw.g) || 9.8, 1, 30);
@@ -1865,10 +2167,11 @@
     var c = caseById(id);
     state.caseId = c.id;
     var s = c.setup;
-    state.pivot = s.pivot;
-    state.stickMass = s.stickMass;
+    // the stick keeps the mass it was given at start-up: it is one physical stick,
+    // so loading another case does not swap it for a different one
     state.stickCG = s.stickCG;
     state.clampMass = s.clampMass || 0;
+    state.pivot = typeof s.pivot === 'function' ? s.pivot(s) : s.pivot;
     state.items = s.items.map(function (o) {
       var it = { id: uid(), role: o.role, x: o.x, mass: null, unknown: !!o.unknown };
       if (o.unknown) it.trueMass = round1(60 + Math.random() * 180);
@@ -1902,6 +2205,7 @@
     animateTilt();
     updateChips();
     if (!opts.skipSelected) renderSelected();
+    renderNudgeBar();
     renderHangers();
     renderTable();
     renderUnknownBox();
@@ -1912,7 +2216,7 @@
   }
 
   function syncApparatusInputs() {
-    document.getElementById('stickMass').value = state.stickMass;
+    document.getElementById('stickMass').value = num(state.stickMass, state.stickMass % 1 === 0 ? 0 : 1);
     document.getElementById('stickCG').value = state.stickCG;
     document.getElementById('clampMass').value = state.clampMass;
     document.getElementById('grav').value = state.g;
@@ -2057,7 +2361,7 @@
       var c = caseById('case1');
       state.caseId = c.id;
       state.pivot = c.setup.pivot;
-      state.stickMass = c.setup.stickMass;
+      state.stickMass = STICK_MASS;
       state.stickCG = c.setup.stickCG;
       state.items = c.setup.items.map(function (o) {
         var it = { id: uid(), role: o.role, x: o.x, mass: null, unknown: !!o.unknown };
@@ -2075,6 +2379,11 @@
 
     document.getElementById('levelBtn').addEventListener('click', levelIt);
 
+    document.getElementById('exportPng').addEventListener('click', function () {
+      exportBoard(2, 'torque-balance-board.png');
+    });
+    document.getElementById('exportCsv').addEventListener('click', exportCasesCsv);
+
     var board = document.getElementById('board');
     board.addEventListener('pointerdown', onDown);
     window.addEventListener('pointermove', onMove, { passive: false });
@@ -2084,7 +2393,7 @@
 
     // apparatus inputs
     document.getElementById('stickMass').addEventListener('change', function () {
-      state.stickMass = clamp(parseFloat(this.value) || 150, 1, 2000);
+      state.stickMass = round1(clamp(parseFloat(this.value) || STICK_MASS, 1, 2000));
       render();
     });
     document.getElementById('stickCG').addEventListener('change', function () {
@@ -2134,6 +2443,17 @@
     renderAddPills();
     render();
     syncCompact();
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+      if (!state.selected) return;
+      var t = e.target;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
+      if (e.altKey || e.ctrlKey || e.metaKey) return;
+      e.preventDefault();
+      nudgeSelected((e.key === 'ArrowRight' ? 1 : -1) * (e.shiftKey ? 1 : 0.1));
+    });
+
     var resizeTimer = null;
     window.addEventListener('resize', function () {
       measureTopbar();
